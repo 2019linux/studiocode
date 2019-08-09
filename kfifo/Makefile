@@ -5,7 +5,7 @@ KDIR := /lib/modules/$(KVER)/build
 
 PWD ?= $(shell pwd)
 
-obj-m += driver.o 
+obj-m += record-example.o 
 
 all:
 	make -C $(KDIR) M=$(PWD) modules

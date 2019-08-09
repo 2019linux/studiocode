@@ -1,92 +1,45 @@
-#include <linux/init.h>
+
 #include <linux/module.h>
-#include <linux/sched.h>
+#include <linux/moduleparam.h>
+#include <linux/init.h>
+
+#include <linux/kernel.h>
+#include <linux/slab.h>  
 #include <linux/fs.h>
+#include <linux/errno.h>
+#include <linux/types.h>
+#include <linux/proc_fs.h>
+#include <linux/fcntl.h>
+#include <linux/seq_file.h>
 #include <linux/cdev.h>
-#include <linux/slab.h>
+
+#include <linux/uaccess.h>
+
 
 MODULE_LICENSE("Dual BSD/GPL");
+int buf_size =  1024*1024*4;
 
-static unsigned int scull_major;
-static struct class *scullclass;
-
-struct scull_dev {                                                        
-	  struct cdev cdev;                     
-	  unsigned char *memdata;        
-};
-
-static struct scull_dev  *scull_devices;
-
-static struct file_operations scull_fops = {
-	 .owner =  THIS_MODULE, 
-	 //.llseek =  scull_llseek, 
-	// .read =  scull_read, 
-	// .write =  scull_write, 
-	 //.ioctl =  scull_ioctl, 
-	// .open =  scull_open, 
-	 //.release =  scull_release,  
-};
-
-static void scull_setup_cdev(struct scull_dev *dev, int index)
-{
-	int err, devno = MKDEV(scull_major, index);
-
-	cdev_init(&dev->cdev, &scull_fops);
-	dev->cdev.owner = THIS_MODULE;
-	dev->cdev.ops = &scull_fops;
-	err = cdev_add (&dev->cdev, devno, 1);
-	/* Fail gracefully if need be */
-	if (err)
-		printk(KERN_NOTICE "Error %d adding scull%d", err, index);
-} 
-
-
+int *bufp = NULL;
+struct kmem_cache       *test_buf_cache;
 
 static void __exit scull_exit(void)
 {
+	//kfree(bufp);
+	kmem_cache_free(test_buf_cache, bufp);
+	 kmem_cache_destroy(test_buf_cache);
 
-	dev_t devno = MKDEV(scull_major,0);
-
-	cdev_del(&scull_devices->cdev);
-
-	device_destroy(scullclass,devno);
-	class_destroy(scullclass);
-        kfree(scull_devices); 	
-	unregister_chrdev_region(devno, 1);
 }
 
 static int __init scull_init(void)
 {
-
-	int result;
-	dev_t dev = 0;
-
-	printk(KERN_INFO "The process is \"%s\" (pid %i)\n", current->comm, current->pid);
-
-	result = alloc_chrdev_region(&dev, 0, 1, "scull");
-	if (result)
-		return result;
-
-	scull_major = MAJOR(dev);
-		
-	scull_devices = kmalloc(sizeof(struct scull_dev),GFP_KERNEL);
-	if(!scull_devices){
-		result = -ENOMEM;
-		goto fail;
-	}
-	
-	memset(scull_devices,0, sizeof(struct scull_dev));
-	printk(KERN_ALERT "The length of scull_dev is %ld",sizeof(struct scull_dev));
-
-	scull_setup_cdev(scull_devices, 0);
-
-	scullclass = class_create(THIS_MODULE,"scull");
-	dev = MKDEV(scull_major,0);
-	device_create(scullclass, NULL, dev, NULL, "scull");
+	//bufp = kmalloc(buf_size+1, GFP_KERNEL);
+	test_buf_cache = kmem_cache_create("hello", buf_size, 512, 0, NULL);
+	bufp = kmem_cache_alloc(test_buf_cache, GFP_KERNEL);
+	if(!bufp) 
+		printk("[1]kmalloc buf fail\n");
+	else
+		printk("[1]kmalloc buf sucess !!\n");
 	return 0;
-fail:
-	scull_exit();
-	return result;
 }
 
 
