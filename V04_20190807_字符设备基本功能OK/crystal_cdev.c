@@ -17,6 +17,11 @@
 #include <linux/delay.h>
 #include <linux/version.h>
 #include <linux/vmalloc.h>
+#include <linux/sched.h>
+#include <linux/time.h>
+#include <linux/sched/signal.h>
+
+
 
 #define DEVICE_NAME			"crystal_cdev"
 #define BUFFERSIZE			4*1024*1024		//全局内存最大4M字节

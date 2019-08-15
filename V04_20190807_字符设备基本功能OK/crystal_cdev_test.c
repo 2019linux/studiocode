@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
 
 #define dev_name "/dev/crystal_cdev"
 #define MEM_CLEAR 0x1

@@ -85,7 +85,11 @@ int my_drv_init(void)
 	if(IS_ERR(myclass_dev)) 
 		goto dev_fail;
 
-	stuff = kmalloc(9,GFP_KERNEL);	
+	stuff = kmalloc(4*1024*1024,GFP_KERNEL);
+	if (!stuff) {
+		return -ENOMEM;
+		goto fail_malloc;
+	}			
 	printk("kmalloc got : %zu byte of memory\n",ksize(stuff));
 	printk("<1>kmalloc: kmallocmem va addr=%p  "
 			            "\tpa addr=%lx\n", stuff, __pa(stuff));
@@ -100,7 +104,8 @@ int my_drv_init(void)
 	vfree(vmallocbuf);
 	return 0;
 
-
+fail_malloc:
+	device_destroy(myclass,MKDEV(major, 0));
 dev_fail:
 	class_destroy(myclass);
 class_fail:
